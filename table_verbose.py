@@ -10,8 +10,8 @@ from collections import namedtuple
 #         
 #     --- head_note(not based on column)
 #     --- line_above ---------(based on column)
-#         header_row
-#     --- line_below_header ---
+#         header_row (column names)
+#     --- line_below_header --- (based on column)
 #         data_row
 #     --- line_bewteen_rows ---
 #     ... (more datarows) ...
@@ -82,7 +82,27 @@ LineFormat = namedtuple(
 )
 
 TableFormatter = {
+    "ascii": TableFormat(
+        head_note=None,
+        line_above=LineFormat("+","-","+","+"),
+        line_below_header=None,
+        line_between_rows=None,
+        line_below=LineFormat("+","-","+","+"),
+        header_row=None,
+        data_row=LineFormat("|"," ","|","|"),
+        force_padding=1,
+        end_note=None),
     "pretty_ascii": TableFormat(
+        head_note=None,
+        line_above=LineFormat("+","-","+","+"),
+        line_below_header=None,
+        line_between_rows=LineFormat("+","-","+","+"),
+        line_below=LineFormat("+","-","+","+"),
+        header_row=None,
+        data_row=LineFormat("|"," ","|","|"),
+        force_padding=1,
+        end_note=None),
+    "markdown": TableFormat(
         head_note=None,
         line_above=LineFormat("+","-","+","+"),
         line_below_header=None,
@@ -192,6 +212,7 @@ def __align_int(table, i):
     pass
 
 def table_verbose(table,
+                  header=None,
                   table_format="pretty_ascii",
                   str_aligh="center",
                   number_align=False,
@@ -223,7 +244,10 @@ def table_verbose(table,
     if column_edge[0] and formatter.line_above is not None:
         str_list.append(__format_line(formatter.line_above, space_after_padding, column_edge[2], column_edge[3]))
 
-    middle_line = "\n" +  __format_line(formatter.line_between_rows, space_after_padding, column_edge[2], column_edge[3]) + "\n"
+    if formatter.line_between_rows is not None:
+        middle_line = "\n" +  __format_line(formatter.line_between_rows, space_after_padding, column_edge[2], column_edge[3]) + "\n"
+    else:
+        middle_line = "\n"
     data_list = []
 
     for data in table:
@@ -242,5 +266,7 @@ def table_verbose(table,
 
 if __name__=="__main__":
     table = [["Rice",12.23],["Fish",399.9]]
+    #  header = ["Product","Price"]
+    #  s = table_verbose(table, table_format="ascii")
     s = table_verbose(table)
     print(s)
