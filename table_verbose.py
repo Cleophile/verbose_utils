@@ -104,13 +104,13 @@ TableFormatter = {
         end_note=None),
     "markdown": TableFormat(
         head_note=None,
-        line_above=LineFormat("+","-","+","+"),
+        line_above=None,
         line_below_header=None,
-        line_between_rows=LineFormat("+","-","+","+"),
-        line_below=LineFormat("+","-","+","+"),
-        header_row=None,
+        line_between_rows=None,
+        line_below=None,
+        header_row=LineFormat("|"," ","|","|"),
         data_row=LineFormat("|"," ","|","|"),
-        force_padding=1,
+        force_padding=0,
         end_note=None),
 }
 
@@ -148,11 +148,49 @@ def __format_data_line_center(fmt: LineFormat, data, count, left, right, padding
     else:
         return str_list
 
-def __format_data_line_left(fmt: LineFormat, data, count, left, right):
+def __format_data_line_left(fmt: LineFormat, data, count, left, right, padding):
     i = 0
+    str_list = []
+    for grid, grid_length in data:
+        total_length = sum(count[i : i + grid_length])
+        i += grid_length
 
-def __format_data_line_right(fmt: LineFormat, data, count, left, right):
+        str_length = len(grid)
+        left_length = padding
+        right_length = total_length - str_length + padding
+
+        str_list.append(fmt.fill*left_length + grid + fmt.fill*right_length)
+
+    str_list = fmt.separate.join(str_list)
+
+    if left:
+        str_list = fmt.begin + str_list
+    if right:
+        return str_list + fmt.end
+    else:
+        return str_list
+
+def __format_data_line_right(fmt: LineFormat, data, count, left, right, padding):
     i = 0
+    str_list = []
+    for grid, grid_length in data:
+        total_length = sum(count[i : i + grid_length])
+        i += grid_length
+
+        str_length = len(grid)
+        right_length = padding
+        left_length = total_length - str_length + padding
+
+        str_list.append(fmt.fill*left_length + grid + fmt.fill*right_length)
+
+    str_list = fmt.separate.join(str_list)
+
+    if left:
+        str_list = fmt.begin + str_list
+    if right:
+        return str_list + fmt.end
+    else:
+        return str_list
 
 DataLineGenerator = {
     "center": __format_data_line_center,
@@ -225,10 +263,10 @@ def table_verbose(table,
         raise ValueError("Choose one from {}".format(list(TableFormatter.keys())))
     formatter = TableFormatter[table_format]
 
-    column_edge = [False,False,False,False]
+    column_edge = {"top": True, "left": True, "right": True, "bottom": True}
     # top bottom left right
-    if edge_line is True:
-        column_edge = [True,True,True,True]
+    if edge_line is False:
+        column_edge = {"top": False, "left": False, "right": False, "bottom": False}
     #  elif edge_line is not False:
 
     column_count = __convert_table(table, number_align)
@@ -241,23 +279,27 @@ def table_verbose(table,
 
     if formatter.head_note is not None:
         str_list.append(formatter.head_note)
-    if column_edge[0] and formatter.line_above is not None:
-        str_list.append(__format_line(formatter.line_above, space_after_padding, column_edge[2], column_edge[3]))
+    if column_edge['top'] and formatter.line_above is not None:
+        str_list.append(__format_line(formatter.line_above, space_after_padding, column_edge['left'], column_edge['right']))
 
     if formatter.line_between_rows is not None:
-        middle_line = "\n" +  __format_line(formatter.line_between_rows, space_after_padding, column_edge[2], column_edge[3]) + "\n"
+        middle_line = "\n" +  __format_line(formatter.line_between_rows, space_after_padding, column_edge['left'], column_edge['right']) + "\n"
     else:
         middle_line = "\n"
     data_list = []
 
+    if str_aligh not in DataLineGenerator:
+        raise ValueError("Choose one from {}".format(list(TableFormatter.keys())))
+    data_line_formatter = DataLineGenerator[str_aligh]
+
     for data in table:
         padding = 1
-        data_list.append(__format_data_line_center(formatter.data_row, data, space_count, column_edge[2], column_edge[3], padding))
+        data_list.append(data_line_formatter(formatter.data_row, data, space_count, column_edge['left'], column_edge['right'], padding))
 
     str_list.append(middle_line.join(data_list))
 
-    if column_edge[1] and formatter.line_below is not None:
-        str_list.append(__format_line(formatter.line_below, space_after_padding, column_edge[2], column_edge[3]))
+    if column_edge['bottom'] and formatter.line_below is not None:
+        str_list.append(__format_line(formatter.line_below, space_after_padding, column_edge['left'], column_edge['right']))
 
     if formatter.end_note is not None:
         str_list.append(formatter.end_note)
@@ -265,8 +307,8 @@ def table_verbose(table,
     return "\n".join(str_list)
 
 if __name__=="__main__":
-    table = [["Rice",12.23],["Fish",399.9]]
-    #  header = ["Product","Price"]
-    #  s = table_verbose(table, table_format="ascii")
-    s = table_verbose(table)
+    table = [["Rice",12.23],["Shrimp",399.9]]
+    header = ["Product","Price"]
+    s = table_verbose(table, header=header, str_aligh='right')
+    #  s = table_verbose(table)
     print(s)
