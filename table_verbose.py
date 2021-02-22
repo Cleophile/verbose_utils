@@ -6,6 +6,19 @@
 
 from collections import namedtuple
 
+# Line generators
+def __markdown_below_header_generator(grid_space, align):
+    if align=="center":
+        s = [":" + "-"*i + ":" for i in grid_space]
+    elif align=="left":
+        s = [":" + "-"*i for i in grid_space]
+    elif align=="right":
+        s = ["-"*i + ":" for i in grid_space]
+    else:
+        raise ValueError("Align must be center, left or right")
+
+    return "|" + "|".join(s) + "|"
+
 # A table structure is suppposed to be:
 #         
 #     --- head_note(not based on column)
@@ -121,7 +134,6 @@ TableFormatter = {
         line_above=None,
         line_below_header=None,
         line_between_rows=None,
-        #  line_below=LineFormat("+","-","+","+"),
         header_row=LineFormat("||"," ","||","||"),
         data_row=LineFormat("|"," ","|","|"),
         line_below=None,
@@ -135,16 +147,16 @@ TableFormatter = {
     "markdown": TableFormat(
         head_note=None,
         line_above=None,
-        line_below_header=None,
+        line_below_header=__markdown_below_header_generator,
         line_between_rows=None,
         line_below=None,
-        header_row=LineFormat("|"," ","|","|"),
-        data_row=LineFormat("|"," ","|","|"),
+        header_row=LineFormat("|","","|","|"),
+        data_row=LineFormat("|","","|","|"),
         end_note=None,
         force_padding=0,
         force_left=True,
-        force_bottom=True,
-        force_top=True,
+        force_bottom=False,
+        force_top=False,
         force_right=True
     ),
 }
@@ -292,7 +304,6 @@ def __calculate_space(table, column_count):
     return length
 
 def __calculate_header_space(header, column_count):
-    print(header)
     length = [0 for _ in range(column_count)]
     i = 0
     for grid, grid_spread in header:
@@ -351,11 +362,7 @@ def table_verbose(table,
     if header and formatter.header_row is not None:
         header_column_count = __convert_header(header)
         header[-1][1] += column_count - header_column_count
-        print(column_count)
-        print(header_column_count)
         header_count = __calculate_header_space(header, column_count)
-        print(space_count)
-        print(header_count)
         for i in range(len(header_count)):
             space_count[i] = max(space_count[i], header_count[i])
 
@@ -375,7 +382,10 @@ def table_verbose(table,
         str_list.append(data_line_formatter(formatter.header_row, header, space_count, column_edge['left'], column_edge['right'], padding))
 
     if header and formatter.line_below_header is not None:
-        str_list.append(__format_line(formatter.line_below_header, space_after_padding, column_edge['left'], column_edge['right']))
+        if isinstance(formatter.line_below_header, LineFormat):
+            str_list.append(__format_line(formatter.line_below_header, space_after_padding, column_edge['left'], column_edge['right']))
+        else:
+            str_list.append(formatter.line_below_header(space_after_padding, str_aligh))
 
     if formatter.line_between_rows is not None:
         middle_line = "\n" +  __format_line(formatter.line_between_rows, space_after_padding, column_edge['left'], column_edge['right']) + "\n"
@@ -400,6 +410,6 @@ def table_verbose(table,
 if __name__=="__main__":
     table = [["Rice",12.23],["Shrimp",399.9]]
     header = ["Food Product","Price in Dollars"]
-    s = table_verbose(table, header=header, str_aligh='center', edge_line=True, table_format="pretty_ascii")
+    s = table_verbose(table, header=header, str_aligh='center', edge_line=True, table_format="markdown")
     #  s = table_verbose(table)
     print(s)
