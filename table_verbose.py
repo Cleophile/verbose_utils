@@ -44,10 +44,10 @@ TableFormat = namedtuple(
     [
         "head_note",
         "line_above",
+        "header_row",
         "line_below_header",
         "line_between_rows",
         "line_below",
-        "header_row",
         "data_row",
         "force_padding",
         "end_note"
@@ -95,10 +95,10 @@ TableFormatter = {
     "pretty_ascii": TableFormat(
         head_note=None,
         line_above=LineFormat("+","-","+","+"),
-        line_below_header=None,
+        line_below_header=LineFormat("+","=","+","+"),
         line_between_rows=LineFormat("+","-","+","+"),
         line_below=LineFormat("+","-","+","+"),
-        header_row=None,
+        header_row=LineFormat("|"," ","|","|"),
         data_row=LineFormat("|"," ","|","|"),
         force_padding=1,
         end_note=None),
@@ -228,6 +228,18 @@ def __convert_table(table, number_align):
             __align_int(table, idx)
     return column_count
 
+def __convert_header(header):
+    line_count = 0
+    for i in range(len(header)):
+        if hasattr(header[i],"__getitem__") and len(header[i])==2 and isinstance(header[i][1],int) and header[1] > 0:
+            if not isinstance(header[i][0], (int, float)):
+                header[i][0] = str(header[i][0])
+            line_count += header[i][1]
+        else:
+            header[i] = [str(header[i]),1]
+
+    return line_count
+
 def __calculate_space(table, column_count):
     length = [0 for _ in range(column_count)]
     for line in table:
@@ -240,6 +252,19 @@ def __calculate_space(table, column_count):
                 # TODO
                 pass
             i += grid_spread
+    return length
+
+def __calculate_header_space(header, column_count):
+    length = [0 for _ in range(column_count)]
+    i = 0
+    for grid, grid_spread in header:
+        if grid_spread == 1:
+            if length[i] < len(grid):
+                length[i] = len(grid)
+        else:
+            # TODO
+            pass
+        i += grid_spread
     return length
 
 def __align_float(table, i):
@@ -263,6 +288,10 @@ def table_verbose(table,
         raise ValueError("Choose one from {}".format(list(TableFormatter.keys())))
     formatter = TableFormatter[table_format]
 
+    if str_aligh not in DataLineGenerator:
+        raise ValueError("Choose one from {}".format(list(TableFormatter.keys())))
+    data_line_formatter = DataLineGenerator[str_aligh]
+
     column_edge = {"top": True, "left": True, "right": True, "bottom": True}
     # top bottom left right
     if edge_line is False:
@@ -273,24 +302,37 @@ def table_verbose(table,
 
     padding = max(formatter.force_padding, padding)
     space_count = __calculate_space(table, column_count)
+
+    if header and formatter.header_row is not None:
+        header_column_count = __convert_header(header)
+        header[-1][1] += column_count - header_column_count
+        header_count = __calculate_header_space(header, column_count)
+        for i in range(len(header_count)):
+            space_count[i] = max(space_count[i], header_count[i])
+
     space_after_padding = [i + padding * 2 for i in space_count]
 
     str_list = []
 
+    # notes or configs at the beginning of the table
     if formatter.head_note is not None:
         str_list.append(formatter.head_note)
     if column_edge['top'] and formatter.line_above is not None:
         str_list.append(__format_line(formatter.line_above, space_after_padding, column_edge['left'], column_edge['right']))
+
+
+    # header configuration
+    if header and formatter.header_row is not None:
+        str_list.append(data_line_formatter(formatter.data_row, header, space_count, column_edge['left'], column_edge['right'], padding))
+
+    if header and formatter.line_below_header is not None:
+        str_list.append(__format_line(formatter.line_below_header, space_after_padding, column_edge['left'], column_edge['right']))
 
     if formatter.line_between_rows is not None:
         middle_line = "\n" +  __format_line(formatter.line_between_rows, space_after_padding, column_edge['left'], column_edge['right']) + "\n"
     else:
         middle_line = "\n"
     data_list = []
-
-    if str_aligh not in DataLineGenerator:
-        raise ValueError("Choose one from {}".format(list(TableFormatter.keys())))
-    data_line_formatter = DataLineGenerator[str_aligh]
 
     for data in table:
         padding = 1
