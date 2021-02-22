@@ -19,17 +19,17 @@ from collections import namedtuple
 #         data_row (last one)
 #     --- line_below ---------
 #
-# TableFormat's line* elements can be
+# TableFormat's line elements that are based on column can be
 #
 #   - either None, if the element is not used,
 #   - or a Line tuple,
 #   - or a function: [col_widths], [col_alignments] -> string.
 #
-# TableFormat's *row elements can be
+# TableFormat's header_row or data_row elements can be
 #
 #   - either None, if the element is not used,
 #   - or a DataRow tuple,
-#   - or a function: [cell_values], [col_widths], [col_alignments] -> string.
+#   - or a function: [cell_values], [col_widths], col_alignment OR [col_alignments] -> string.
 #
 # padding (an integer) is the amount of minimum white space around data values.
 #
@@ -49,8 +49,12 @@ TableFormat = namedtuple(
         "line_between_rows",
         "line_below",
         "data_row",
+        "end_note",
         "force_padding",
-        "end_note"
+        "force_top",
+        "force_left",
+        "force_right",
+        "force_bottom"
     ],
 )
 
@@ -84,14 +88,19 @@ LineFormat = namedtuple(
 TableFormatter = {
     "ascii": TableFormat(
         head_note=None,
-        line_above=LineFormat("+","-","+","+"),
-        line_below_header=None,
+        line_above=LineFormat("-","-","-","-"),
+        line_below_header=LineFormat("=","=","=","="),
         line_between_rows=None,
-        line_below=LineFormat("+","-","+","+"),
-        header_row=None,
-        data_row=LineFormat("|"," ","|","|"),
-        force_padding=1,
-        end_note=None),
+        line_below=LineFormat("-","-","-","-"),
+        header_row=LineFormat(""," "," ",""),
+        data_row=LineFormat(""," "," ",""),
+        end_note=None,
+        force_padding=0,
+        force_left=False,
+        force_bottom=None,
+        force_top=None,
+        force_right=False
+    ),
     "pretty_ascii": TableFormat(
         head_note=None,
         line_above=LineFormat("+","-","+","+"),
@@ -100,8 +109,29 @@ TableFormatter = {
         line_below=LineFormat("+","-","+","+"),
         header_row=LineFormat("|"," ","|","|"),
         data_row=LineFormat("|"," ","|","|"),
+        end_note=None,
         force_padding=1,
-        end_note=None),
+        force_left=None,
+        force_bottom=None,
+        force_top=None,
+        force_right=None
+    ),
+    "jira": TableFormat(
+        head_note=None,
+        line_above=None,
+        line_below_header=None,
+        line_between_rows=None,
+        #  line_below=LineFormat("+","-","+","+"),
+        header_row=LineFormat("||"," ","||","||"),
+        data_row=LineFormat("|"," ","|","|"),
+        line_below=None,
+        end_note=None,
+        force_padding=1,
+        force_left=True,
+        force_bottom=None,
+        force_top=None,
+        force_right=True
+    ),
     "markdown": TableFormat(
         head_note=None,
         line_above=None,
@@ -110,8 +140,13 @@ TableFormatter = {
         line_below=None,
         header_row=LineFormat("|"," ","|","|"),
         data_row=LineFormat("|"," ","|","|"),
+        end_note=None,
         force_padding=0,
-        end_note=None),
+        force_left=True,
+        force_bottom=True,
+        force_top=True,
+        force_right=True
+    ),
 }
 
 def __format_line(fmt: LineFormat, count, left, right):
@@ -213,6 +248,7 @@ def __convert_table(table, number_align):
                     line_count += line[i][1]
                 else:
                     line[i] = [str(line[i]),1]
+                    line_count += 1
 
             column_count = max(column_count, line_count)
 
@@ -237,6 +273,7 @@ def __convert_header(header):
             line_count += header[i][1]
         else:
             header[i] = [str(header[i]),1]
+            line_count += 1
 
     return line_count
 
@@ -255,6 +292,7 @@ def __calculate_space(table, column_count):
     return length
 
 def __calculate_header_space(header, column_count):
+    print(header)
     length = [0 for _ in range(column_count)]
     i = 0
     for grid, grid_spread in header:
@@ -298,6 +336,14 @@ def table_verbose(table,
     if edge_line is False:
         column_edge = {"top": False, "left": False, "right": False, "bottom": False}
     #  elif edge_line is not False:
+    if formatter.force_left is not None:
+        column_edge['left'] = formatter.force_left
+    if formatter.force_right is not None:
+        column_edge['right'] = formatter.force_right
+    if formatter.force_top is not None:
+        column_edge['top'] = formatter.force_top
+    if formatter.force_bottom is not None:
+        column_edge['bottom'] = formatter.force_bottom
 
     column_count = __convert_table(table, number_align)
     space_count = __calculate_space(table, column_count)
@@ -305,7 +351,11 @@ def table_verbose(table,
     if header and formatter.header_row is not None:
         header_column_count = __convert_header(header)
         header[-1][1] += column_count - header_column_count
+        print(column_count)
+        print(header_column_count)
         header_count = __calculate_header_space(header, column_count)
+        print(space_count)
+        print(header_count)
         for i in range(len(header_count)):
             space_count[i] = max(space_count[i], header_count[i])
 
@@ -322,7 +372,7 @@ def table_verbose(table,
 
     # header configuration
     if header and formatter.header_row is not None:
-        str_list.append(data_line_formatter(formatter.data_row, header, space_count, column_edge['left'], column_edge['right'], padding))
+        str_list.append(data_line_formatter(formatter.header_row, header, space_count, column_edge['left'], column_edge['right'], padding))
 
     if header and formatter.line_below_header is not None:
         str_list.append(__format_line(formatter.line_below_header, space_after_padding, column_edge['left'], column_edge['right']))
@@ -349,7 +399,7 @@ def table_verbose(table,
 
 if __name__=="__main__":
     table = [["Rice",12.23],["Shrimp",399.9]]
-    header = ["Product","Price"]
-    s = table_verbose(table, header=header, str_aligh='right')
+    header = ["Food Product","Price in Dollars"]
+    s = table_verbose(table, header=header, str_aligh='center', edge_line=True, table_format="pretty_ascii")
     #  s = table_verbose(table)
     print(s)
