@@ -287,6 +287,7 @@ def table_verbose(table,
     if table_format not in TableFormatter:
         raise ValueError("Choose one from {}".format(list(TableFormatter.keys())))
     formatter = TableFormatter[table_format]
+    padding = max(formatter.force_padding, padding)
 
     if str_aligh not in DataLineGenerator:
         raise ValueError("Choose one from {}".format(list(TableFormatter.keys())))
@@ -299,8 +300,6 @@ def table_verbose(table,
     #  elif edge_line is not False:
 
     column_count = __convert_table(table, number_align)
-
-    padding = max(formatter.force_padding, padding)
     space_count = __calculate_space(table, column_count)
 
     if header and formatter.header_row is not None:
