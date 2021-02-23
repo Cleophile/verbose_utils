@@ -251,10 +251,7 @@ def __convert_table(table, number_align):
         for line in table:
             line_count = 0
             for i in range(len(line)):
-                if isinstance(line[i], (str,int,float)):
-                    line[i] = [str(line[i]),1]
-                    line_count += 1
-                elif hasattr(line[i],"__getitem__") and len(line[i])==2 and isinstance(line[i][1],int) and line[1] > 0:
+                if hasattr(line[i],"__getitem__") and len(line[i])==2 and isinstance(line[i][1],int) and line[1] > 0:
                     if not isinstance(line[i][0], (int, float)):
                         line[i][0] = str(line[i][0])
                     line_count += line[i][1]
@@ -264,8 +261,9 @@ def __convert_table(table, number_align):
 
             column_count = max(column_count, line_count)
 
-        return column_count
+        return column_count, None
 
+    # notice on not normal number col
     number_line = [2 for _ in range(column_count)]
 
     for idx, i in enumerate(number_line):
@@ -410,6 +408,6 @@ def table_verbose(table,
 if __name__=="__main__":
     table = [["Rice",12.23],["Shrimp",399.9]]
     header = ["Food Product","Price in Dollars"]
-    s = table_verbose(table, header=header, str_aligh='center', edge_line=True, table_format="markdown")
+    s = table_verbose(table, header=header, str_aligh='center', edge_line=True, table_format="jira")
     #  s = table_verbose(table)
     print(s)
