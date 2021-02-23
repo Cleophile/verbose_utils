@@ -261,7 +261,7 @@ def __convert_table(table, number_align):
 
             column_count = max(column_count, line_count)
 
-        return column_count, None
+        return column_count
 
     # notice on not normal number col
     number_line = [2 for _ in range(column_count)]
