@@ -19,6 +19,27 @@ def __markdown_below_header_generator(grid_space, align):
 
     return "|" + "|".join(s) + "|"
 
+def __jira_table_format(table, header, number_align, *args, **kwargs):
+    column_count = __convert_table(table, number_align)
+    print(table)
+    if header:
+        line_count = __convert_header(header)
+        header_delta = max(0, column_count - line_count)
+        column_count = max(column_count, line_count)
+        s = "||"
+        for i in header:
+            s += i[0] + "||" * i[1]
+        s += "||" * header_delta + "\n"
+    else:
+        s = "\n"
+
+    for line in table:
+        line_str = "|"
+        for i in line:
+            line_str += i[0] + "|" * i[1]
+        s += line_str + "\n"
+    return s
+
 # A table structure is suppposed to be:
 #         
 #     --- head_note(not based on column)
@@ -129,21 +150,7 @@ TableFormatter = {
         force_top=None,
         force_right=None
     ),
-    "jira": TableFormat(
-        head_note=None,
-        line_above=None,
-        line_below_header=None,
-        line_between_rows=None,
-        header_row=LineFormat("||"," ","||","||"),
-        data_row=LineFormat("|"," ","|","|"),
-        line_below=None,
-        end_note=None,
-        force_padding=1,
-        force_left=True,
-        force_bottom=None,
-        force_top=None,
-        force_right=True
-    ),
+    "jira": __jira_table_format,
     "markdown": TableFormat(
         head_note=None,
         line_above=None,
@@ -334,6 +341,11 @@ def table_verbose(table,
     if table_format not in TableFormatter:
         raise ValueError("Choose one from {}".format(list(TableFormatter.keys())))
     formatter = TableFormatter[table_format]
+
+    if not isinstance(formatter, TableFormat):
+        return formatter(table, header, str_aligh, number_align,
+                         restrict_float, edge_line, padding, vertical_padding)
+
     padding = max(formatter.force_padding, padding)
 
     if str_aligh not in DataLineGenerator:
@@ -406,8 +418,9 @@ def table_verbose(table,
     return "\n".join(str_list)
 
 if __name__=="__main__":
-    table = [["Rice",12.23],["Shrimp",399.9]]
-    header = ["Food Product","Price in Dollars"]
+    table = [["Rice",12.23],["Shrimp",399.9],["",100.2]]
+    #  header = ["Food Product","Price in Dollars"]
+    header = ["Food Product"]
     s = table_verbose(table, header=header, str_aligh='center', edge_line=True, table_format="jira")
     #  s = table_verbose(table)
     print(s)
