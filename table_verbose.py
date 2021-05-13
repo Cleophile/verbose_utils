@@ -22,7 +22,6 @@ def __markdown_below_header_generator(grid_space, align):
 
 def __jira_table_format(table, header, number_align, *args, **kwargs):
     column_count = __convert_table(table, number_align)
-    print(table)
     if header:
         line_count = __convert_header(header)
         header_delta = max(0, column_count - line_count)
@@ -363,10 +362,10 @@ def __calculate_header_space(header, column_count):
             if current_length < letters:
                 average_add = (letters - current_length) // grid_spread
                 modulo = (letters - current_length) % grid_spread
-                for i in range(modulo):
-                    length[i] += average_add + 1
-                for i in range(modulo, grid_spread):
-                    length[i] += average_add
+                for j in range(modulo):
+                    length[j] += average_add + 1
+                for j in range(modulo, grid_spread):
+                    length[j] += average_add
         i += grid_spread
     return length
 
@@ -460,9 +459,9 @@ def table_verbose(table,
     return "\n".join(str_list)
 
 if __name__=="__main__":
-    table = [["Rice",12.232],["Shrimp",399.9],["",100.2]]
+    table = [["arroz","China",3.22], ["jamón", "España", 39.9], [["Mantequilla",2], 10]]
     #  header = ["Food Product","Price in Dollars"]
-    header = ["Food Product & Price"]
+    header = ["Alimiento", "Lugar de Producción", "Precio"]
     s = table_verbose(table, header=header, str_aligh="center", edge_line=True, number_align=True)
     #  s = table_verbose(table, header=header, str_aligh="right", edge_line=True)
     #  s = table_verbose(table)
