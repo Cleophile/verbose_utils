@@ -88,7 +88,8 @@ TableFormat = namedtuple(
         "force_top",
         "force_left",
         "force_right",
-        "force_bottom"
+        "force_bottom",
+        "illegal"
     ],
 )
 
@@ -133,7 +134,8 @@ TableFormatter = {
         force_left=None,
         force_bottom=None,
         force_top=None,
-        force_right=None
+        force_right=None,
+        illegal={'\t'}
     ),
     "pretty_ascii": TableFormat(
         head_note=None,
@@ -148,7 +150,8 @@ TableFormatter = {
         force_left=None,
         force_bottom=None,
         force_top=None,
-        force_right=None
+        force_right=None,
+        illegal={"\t"}
     ),
     "jira": __jira_table_format,
     "markdown": TableFormat(
@@ -164,7 +167,8 @@ TableFormatter = {
         force_left=True,
         force_bottom=False,
         force_top=False,
-        force_right=True
+        force_right=True,
+        illegal={'\t', "\n"}
     ),
 }
 
