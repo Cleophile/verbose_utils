@@ -126,14 +126,14 @@ TableFormatter = {
         line_below_header=LineFormat("=","=","=","="),
         line_between_rows=None,
         line_below=LineFormat("-","-","-","-"),
-        header_row=LineFormat(""," "," ",""),
-        data_row=LineFormat(""," "," ",""),
+        header_row=LineFormat(" "," "," "," "),
+        data_row=LineFormat(" "," "," "," "),
         end_note=None,
         force_padding=0,
-        force_left=False,
+        force_left=None,
         force_bottom=None,
         force_top=None,
-        force_right=False
+        force_right=None
     ),
     "pretty_ascii": TableFormat(
         head_note=None,
@@ -445,7 +445,6 @@ def table_verbose(table,
     data_list = []
 
     for data in table:
-        padding = 1
         data_list.append(data_line_formatter(formatter.data_row, data, space_count, column_edge['left'], column_edge['right'], padding))
 
     str_list.append(middle_line.join(data_list))
@@ -462,7 +461,7 @@ if __name__=="__main__":
     table = [["arroz","China",3.22], ["jamón", "España", 39.9], [["Mantequilla",2], 10]]
     #  header = ["Food Product","Price in Dollars"]
     header = ["Alimiento", "Lugar de Producción", "Precio"]
-    s = table_verbose(table, header=header, str_aligh="center", edge_line=True, number_align=True)
+    s = table_verbose(table, header=header, str_aligh="center", edge_line=True, number_align=True, table_format="pretty_ascii")
     #  s = table_verbose(table, header=header, str_aligh="right", edge_line=True)
     #  s = table_verbose(table)
     print(s)
