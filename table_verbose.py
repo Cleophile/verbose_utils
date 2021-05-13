@@ -345,29 +345,24 @@ def __convert_header(header):
 def __calculate_space(table, column_count):
     length = [0 for _ in range(column_count)]
     for line in table:
-        i = 0
-        for grid, grid_spread in line:
-            if grid_spread == 1:
-                if length[i] < len(grid):
-                    length[i] = len(grid)
-            else:
-                # TODO
-                pass
-            i += grid_spread
+        current_length = __calculate_header_space(line, column_count)
+        for i in range(column_count):
+            length[i] = max(current_length[i], length[i])
     return length
 
 def __calculate_header_space(header, column_count):
     length = [0 for _ in range(column_count)]
     i = 0
     for grid, grid_spread in header:
+        letters = max([len(i) for i in grid.split("\n")])
         if grid_spread == 1:
-            if length[i] < len(grid):
-                length[i] = len(grid)
+            if length[i] < letters:
+                length[i] = letters
         else:
             current_length = sum(length[i:i+grid_spread])
-            if current_length < len(grid):
-                average_add = (len(grid) - current_length) // grid_spread
-                modulo = (len(grid) - current_length) % grid_spread
+            if current_length < letters:
+                average_add = (letters - current_length) // grid_spread
+                modulo = (letters - current_length) % grid_spread
                 for i in range(modulo):
                     length[i] += average_add + 1
                 for i in range(modulo, grid_spread):
