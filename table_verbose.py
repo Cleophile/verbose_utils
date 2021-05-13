@@ -5,6 +5,7 @@
 # Y-Enterprise
 
 from collections import namedtuple
+from typing import List, Union
 
 # Line generators
 def __markdown_below_header_generator(grid_space, align):
@@ -182,14 +183,12 @@ def __format_data_line_center(fmt: LineFormat, data, count, left, right, padding
     i = 0
     str_list = []
     for grid, grid_length in data:
-        total_length = sum(count[i : i + grid_length])
+        total_length = sum(count[i : i + grid_length]) + 2 * grid_length * padding + grid_length - 1
         i += grid_length
 
         str_length = len(grid)
         left_length = (total_length - str_length) // 2
         right_length = total_length - str_length - left_length
-        left_length += padding
-        right_length += padding
 
         str_list.append(fmt.fill*left_length + grid + fmt.fill*right_length)
 
@@ -211,7 +210,7 @@ def __format_data_line_left(fmt: LineFormat, data, count, left, right, padding):
 
         str_length = len(grid)
         left_length = padding
-        right_length = total_length - str_length + padding
+        right_length = total_length - str_length + padding * (2 * grid_length - 1) + grid_length - 1
 
         str_list.append(fmt.fill*left_length + grid + fmt.fill*right_length)
 
@@ -233,7 +232,7 @@ def __format_data_line_right(fmt: LineFormat, data, count, left, right, padding)
 
         str_length = len(grid)
         right_length = padding
-        left_length = total_length - str_length + padding
+        left_length = total_length - str_length + padding * (2 * grid_length - 1) + grid_length - 1
 
         str_list.append(fmt.fill*left_length + grid + fmt.fill*right_length)
 
@@ -252,39 +251,57 @@ DataLineGenerator = {
     "right": __format_data_line_right
 }
 
+def __align_float(table, i):
+    # convert all to float before processing
+    pass
+
 def __convert_table(table, number_align):
     column_count = 0
-    if not number_align:
-        for line in table:
-            line_count = 0
-            for i in range(len(line)):
-                if hasattr(line[i],"__getitem__") and len(line[i])==2 and isinstance(line[i][1],int) and line[1] > 0:
-                    if not isinstance(line[i][0], (int, float)):
-                        line[i][0] = str(line[i][0])
-                    line_count += line[i][1]
-                else:
-                    line[i] = [str(line[i]),1]
-                    line_count += 1
+    for line in table:
+        line_count = 0
+        for i in range(len(line)):
+            if hasattr(line[i], "__getitem__") and \
+                    len(line[i])==2 and isinstance(line[i][1], int) and line[i][1] > 0:
+                if not isinstance(line[i][0], (int, float)):
+                    line[i][0] = str(line[i][0])
+                line_count += line[i][1]
+            else:
+                line[i] = [str(line[i]),1]
+                line_count += 1
 
-            column_count = max(column_count, line_count)
-
-        return column_count
+        column_count = max(column_count, line_count)
 
     # notice on not normal number col
-    number_line = [2 for _ in range(column_count)]
+    number_line = [True for _ in range(column_count)]
+    for line in table:
+        count = 0
+        for i in line:
+            if i[1] == 1:
+                if not isinstance(i[0], (int, float)):
+                    number_line[count] = False
+            count += i[1]
 
-    for idx, i in enumerate(number_line):
-        if i==1:
-            __align_float(table,idx)
-            continue
-        if i==2:
-            __align_int(table, idx)
+    if isinstance(number_align, bool):
+        for i in range(column_count):
+            number_line[i] = number_line[i] and number_align
+    else:
+        align_idx = min(len(number_align), column_count)
+        for i in range(align_idx):
+            number_line[i] = number_align[i] and number_align[i]
+
+        for i in range(align_idx, column_count):
+            number_line[i] = False
+
+    __align_float(table, number_line)
+    print(number_line)
+
     return column_count
 
 def __convert_header(header):
     line_count = 0
     for i in range(len(header)):
-        if hasattr(header[i],"__getitem__") and len(header[i])==2 and isinstance(header[i][1],int) and header[1] > 0:
+        if hasattr(header[i],"__getitem__") and \
+                len(header[i])==2 and isinstance(header[i][1],int) and header[i][1] > 0:
             if not isinstance(header[i][0], (int, float)):
                 header[i][0] = str(header[i][0])
             line_count += header[i][1]
@@ -316,17 +333,16 @@ def __calculate_header_space(header, column_count):
             if length[i] < len(grid):
                 length[i] = len(grid)
         else:
-            # TODO
-            pass
+            current_length = sum(length[i:i+grid_spread])
+            if current_length < len(grid):
+                average_add = (len(grid) - current_length) // grid_spread
+                modulo = (len(grid) - current_length) % grid_spread
+                for i in range(modulo):
+                    length[i] += average_add + 1
+                for i in range(modulo, grid_spread):
+                    length[i] += average_add
         i += grid_spread
     return length
-
-def __align_float(table, i):
-    # convert all to float before processing
-    pass
-
-def __align_int(table, i):
-    pass
 
 def table_verbose(table,
                   header=None,
@@ -377,6 +393,7 @@ def table_verbose(table,
             space_count[i] = max(space_count[i], header_count[i])
 
     space_after_padding = [i + padding * 2 for i in space_count]
+    print(space_count)
 
     str_list = []
 
@@ -418,9 +435,10 @@ def table_verbose(table,
     return "\n".join(str_list)
 
 if __name__=="__main__":
-    table = [["Rice",12.23],["Shrimp",399.9],["",100.2]]
+    table = [["Rice",12.232],["Shrimp",399.9],["",100.2]]
     #  header = ["Food Product","Price in Dollars"]
-    header = ["Food Product"]
-    s = table_verbose(table, header=header, str_aligh='center', edge_line=True, table_format="jira")
+    header = ["Food Product Food Food Food Food"]
+    s = table_verbose(table, header=header, str_aligh="center", edge_line=True, number_align=True)
+    #  s = table_verbose(table, header=header, str_aligh="right", edge_line=True)
     #  s = table_verbose(table)
     print(s)
