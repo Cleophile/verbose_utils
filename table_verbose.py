@@ -8,15 +8,15 @@ from collections import namedtuple
 from typing import List, Union
 
 # Line generators
-def __markdown_below_header_generator(grid_space, align):
-    if align=="center":
-        s = [":" + "-"*i + ":" for i in grid_space]
-    elif align=="left":
-        s = [":" + "-"*i for i in grid_space]
-    elif align=="right":
-        s = ["-"*i + ":" for i in grid_space]
-    else:
-        raise ValueError("Align must be center, left or right")
+def __markdown_below_header_generator(grid_space, align_list):
+    s = []
+    for i, align in zip(grid_space, align_list):
+        if align == "center":
+            s.append(":" + "-" * i + ":")
+        elif align == "left":
+            s.append(":" + "-" * i)
+        else:
+            s.append("-" * i + ":")
 
     return "|" + "|".join(s) + "|"
 
@@ -207,10 +207,11 @@ GridGenerator = {
     "right": __format_grid_right
 }
 
-def __format_data_line(fmt: LineFormat, data, count, left, right, padding, align):
+def __format_data_line(fmt: LineFormat, data, count, left, right, padding, align_list):
     i = 0
     str_list = []
     for grid, grid_length in data:
+        align = align_list[i]
         grid_generator = GridGenerator[align]
         str_list.append(grid_generator(fmt.fill, sum(count[i : i + grid_length]), grid, grid_length, padding))
         i += grid_length
@@ -346,7 +347,7 @@ def __calculate_header_space(header, column_count):
 def table_verbose(table,
                   header=None,
                   table_format="pretty_ascii",
-                  str_align="center",
+                  str_align : Union[str, List[str]]="center",
                   number_align=False,
                   restrict_float=False,
                   edge_line=True,
@@ -362,9 +363,6 @@ def table_verbose(table,
                          restrict_float, edge_line, padding, vertical_padding)
 
     padding = max(formatter.force_padding, padding)
-
-    if str_align not in GridGenerator:
-        raise ValueError("Choose one from {}".format(list(GridGenerator.keys())))
 
     column_edge = {"top": True, "left": True, "right": True, "bottom": True}
     # top bottom left right
@@ -389,6 +387,19 @@ def table_verbose(table,
         header_count = __calculate_header_space(header, column_count)
         for i in range(len(header_count)):
             space_count[i] = max(space_count[i], header_count[i])
+
+    if isinstance(str_align, str):
+        if str_align not in GridGenerator:
+            raise ValueError("Choose one from {}".format(list(GridGenerator.keys())))
+        str_align = [str_align for _ in range(column_count)]
+    else:
+        for align in str_align:
+            if align not in GridGenerator:
+                raise ValueError("Choose one from {}".format(list(GridGenerator.keys())))
+        if len(str_align) > column_count:
+            str_align = str_align[:column_count]
+        elif len(str_align) < column_count:
+            str_align.extend([str_align[-1] for _ in range(column_count - len(str_align))])
 
     space_after_padding = [i + padding * 2 for i in space_count]
 
@@ -433,7 +444,7 @@ if __name__=="__main__":
     table = [["arroz","China",3.22], ["jamón", "España", 39.9], [["Mantequilla",2], 10]]
     #  header = ["Food Product","Price in Dollars"]
     header = ["Alimiento", "Lugar de Producción", "Precio"]
-    s = table_verbose(table, header=header, str_align="right", edge_line=True, number_align=True, table_format="pretty_ascii")
+    s = table_verbose(table, header=header, str_align=["left", "right"], edge_line=True, number_align=True, table_format="pretty_ascii")
     #  s = table_verbose(table, header=header, str_align="right", edge_line=True)
     #  s = table_verbose(table)
     print(s)
