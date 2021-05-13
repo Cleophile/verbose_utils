@@ -251,9 +251,36 @@ DataLineGenerator = {
     "right": __format_data_line_right
 }
 
-def __align_float(table, i):
-    # convert all to float before processing
-    pass
+def __align_float(table, number_align, column_count):
+    decimal_left = [0 for _ in range(column_count)]
+    # decimal_right includes the decimal point
+    decimal_right = [0 for _ in range(column_count)]
+    for line in table:
+        count = 0
+        for i in line:
+            if i[1] != 1 or (not number_align[count]):
+                count += i[1]
+                continue
+            decimal_id = i[0].find(".")
+            if decimal_id == -1:
+                decimal_left[count] = max(decimal_left[count], len(i[0]))
+            else:
+                decimal_left[count] = max(decimal_left[count], decimal_id)
+                decimal_right[count] = max(decimal_right[count], len(i[0]) - decimal_id)
+            count += i[1]
+
+    for line in table:
+        count = 0
+        for i in line:
+            if i[1] != 1 or (not number_align[count]):
+                count += i[1]
+                continue
+            decimal_id = i[0].find(".")
+            if decimal_id == -1:
+                i[0] = " " * (decimal_left[count] - len(i[0])) + i[0] + " " * decimal_right[count]
+            else:
+                i[0] = " " * (decimal_left[count] - decimal_id) + i[0] + " " * (decimal_right[count] - len(i[0]) + decimal_id)
+            count += i[1]
 
 def __convert_table(table, number_align):
     column_count = 0
@@ -266,7 +293,10 @@ def __convert_table(table, number_align):
                     line[i][0] = str(line[i][0])
                 line_count += line[i][1]
             else:
-                line[i] = [str(line[i]),1]
+                if isinstance(line[i], (int, float)):
+                    line[i] = [line[i],1]
+                else:
+                    line[i] = [str(line[i]),1]
                 line_count += 1
 
         column_count = max(column_count, line_count)
@@ -279,6 +309,8 @@ def __convert_table(table, number_align):
             if i[1] == 1:
                 if not isinstance(i[0], (int, float)):
                     number_line[count] = False
+                else:
+                    i[0] = str(i[0])
             count += i[1]
 
     if isinstance(number_align, bool):
@@ -292,8 +324,7 @@ def __convert_table(table, number_align):
         for i in range(align_idx, column_count):
             number_line[i] = False
 
-    __align_float(table, number_line)
-    print(number_line)
+    __align_float(table, number_line, column_count)
 
     return column_count
 
@@ -393,7 +424,6 @@ def table_verbose(table,
             space_count[i] = max(space_count[i], header_count[i])
 
     space_after_padding = [i + padding * 2 for i in space_count]
-    print(space_count)
 
     str_list = []
 
@@ -437,7 +467,7 @@ def table_verbose(table,
 if __name__=="__main__":
     table = [["Rice",12.232],["Shrimp",399.9],["",100.2]]
     #  header = ["Food Product","Price in Dollars"]
-    header = ["Food Product Food Food Food Food"]
+    header = ["Food Product & Price"]
     s = table_verbose(table, header=header, str_aligh="center", edge_line=True, number_align=True)
     #  s = table_verbose(table, header=header, str_aligh="right", edge_line=True)
     #  s = table_verbose(table)
