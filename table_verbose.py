@@ -463,12 +463,3 @@ def table_verbose(table,
         str_list.append(formatter.end_note)
 
     return "\n".join(str_list)
-
-if __name__=="__main__":
-    table = [["arroz","China",3.22], ["jamón", "España", 39.9], [["Mantequilla",2], 10]]
-    #  header = ["Food Product","Price in Dollars"]
-    header = ["Alimiento", "Lugar de Producción", "Precio"]
-    s = table_verbose(table, header=header, str_align=["left", "right"], edge_line=True, number_align=True, table_format="pretty_ascii", vertical_padding=1)
-    #  s = table_verbose(table, header=header, str_align="right", edge_line=True)
-    #  s = table_verbose(table)
-    print(s)
