@@ -95,7 +95,7 @@ TableFormat = namedtuple(
 
 # DataRowFormat
 # like | aa | bb |
-# begin=separate=end=|
+# begin=separate=end='|'
 
 DataRowFormat = namedtuple(
     "DataRowFormat",
@@ -108,7 +108,7 @@ DataRowFormat = namedtuple(
 
 # LineFormat
 # like +----+----+
-# begin=end=separate=+, fill=-
+# begin=end=separate='+', fill='-'
 
 LineFormat = namedtuple(
     "LineFormat",
@@ -211,23 +211,43 @@ GridGenerator = {
     "right": __format_grid_right
 }
 
-def __format_data_line(fmt: LineFormat, data, count, left, right, padding, align_list):
-    i = 0
-    str_list = []
+def __format_data_line(fmt: LineFormat, data, count, left, right, padding, align_list, vertical_padding):
+    length_list = []
+    grid_list = []
     for grid, grid_length in data:
+        length_list.append(grid_length)
+        grid_list.append(grid.split("\n"))
+    longest = max([len(i) for i in grid_list]) + 2 * vertical_padding
+    str_mat = [[] for _ in range(longest)]
+    i = 0
+    for line, grid_length in zip(grid_list, length_list):
         align = align_list[i]
         grid_generator = GridGenerator[align]
-        str_list.append(grid_generator(fmt.fill, sum(count[i : i + grid_length]), grid, grid_length, padding))
+        n = len(line)
+        lower = (longest - n ) // 2
+        upper = longest - lower - n
+        c = 0
+        for _ in range(upper):
+            str_mat[c].append(grid_generator(fmt.fill, sum(count[i : i + grid_length]), "", grid_length, padding))
+            c += 1
+        for grid in line:
+            str_mat[c].append(grid_generator(fmt.fill, sum(count[i : i + grid_length]), grid, grid_length, padding))
+            c += 1
+        for _ in range(lower):
+            str_mat[c].append(grid_generator(fmt.fill, sum(count[i : i + grid_length]), "", grid_length, padding))
+            c += 1
         i += grid_length
 
-    str_list = fmt.separate.join(str_list)
+    for i in range(longest):
+        str_mat[i] = fmt.separate.join(str_mat[i])
 
     if left:
-        str_list = fmt.begin + str_list
+        for i in range(longest):
+            str_mat[i] = fmt.begin + str_mat[i]
     if right:
-        return str_list + fmt.end
-    else:
-        return str_list
+        for i in range(longest):
+            str_mat[i] = str_mat[i] + fmt.end
+    return "\n".join(str_mat)
 
 def __align_float(table, number_align, column_count):
     decimal_left = [0 for _ in range(column_count)]
@@ -417,7 +437,7 @@ def table_verbose(table,
 
     # header configuration
     if header and formatter.header_row is not None:
-        str_list.append(__format_data_line(formatter.header_row, header, space_count, column_edge['left'], column_edge['right'], padding, str_align))
+        str_list.append(__format_data_line(formatter.header_row, header, space_count, column_edge['left'], column_edge['right'], padding, str_align, 0))
 
     if header and formatter.line_below_header is not None:
         if isinstance(formatter.line_below_header, LineFormat):
@@ -432,7 +452,7 @@ def table_verbose(table,
     data_list = []
 
     for data in table:
-        data_list.append(__format_data_line(formatter.data_row, data, space_count, column_edge['left'], column_edge['right'], padding, str_align))
+        data_list.append(__format_data_line(formatter.data_row, data, space_count, column_edge['left'], column_edge['right'], padding, str_align, vertical_padding))
 
     str_list.append(middle_line.join(data_list))
 
@@ -448,7 +468,7 @@ if __name__=="__main__":
     table = [["arroz","China",3.22], ["jamón", "España", 39.9], [["Mantequilla",2], 10]]
     #  header = ["Food Product","Price in Dollars"]
     header = ["Alimiento", "Lugar de Producción", "Precio"]
-    s = table_verbose(table, header=header, str_align=["left", "right"], edge_line=True, number_align=True, table_format="pretty_ascii")
+    s = table_verbose(table, header=header, str_align=["left", "right"], edge_line=True, number_align=True, table_format="pretty_ascii", vertical_padding=1)
     #  s = table_verbose(table, header=header, str_align="right", edge_line=True)
     #  s = table_verbose(table)
     print(s)
