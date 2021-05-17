@@ -40,6 +40,38 @@ def __jira_table_format(table, header, number_align, *args, **kwargs):
         s += line_str + "\n"
     return s
 
+def __html_table_format(table, header, str_align, number_align,
+                        restrict_float, edge_line, padding,
+                        vertical_padding, *args, **kwargs):
+    __convert_table(table, number_align)
+    if header:
+        __convert_header(header)
+        grid_str = []
+        for grid, grid_length in header:
+            grid = grid.replace("\n", "<br />")
+            if grid_length == 1:
+                grid_str.append(f"<th>{grid}</th>")
+            else:
+                grid_str.append(f"<th colspan=\"{grid_length}\">{grid}</th>")
+        header_str = "<thead>\n" + "\n".join(grid_str) + "\n</thead>\n"
+    else:
+        header_str = "<thead></thead>"
+
+    line_str = []
+    for line in table:
+        grid_str = []
+        for grid, grid_length in line:
+            grid = grid.replace("\n", "<br />")
+            if grid_length == 1:
+                grid_str.append(f"<td>{grid}</td>")
+            else:
+                grid_str.append(f"<td colspan=\"{grid_length}\">{grid}</td>")
+        line_str.append("".join(grid_str))
+
+    line_str = "<tbody>\n<tr>\n" + "</tr>\n<tr>\n".join(line_str) + "\n</tr>\n</tbody>"
+
+    return header_str + line_str
+
 # A table structure is suppposed to be:
 #         
 #     --- head_note(not based on column)
@@ -186,6 +218,7 @@ TableFormatter = {
         illegal={"\t"}
     ),
     "jira": __jira_table_format,
+    "html": __html_table_format,
     "markdown": TableFormat(
         head_note=None,
         line_above=None,

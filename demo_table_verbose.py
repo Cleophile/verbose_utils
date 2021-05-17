@@ -19,3 +19,5 @@ s = table_verbose(table, header=header, str_align=["left", "right"], edge_line=T
 print(s)
 s = table_verbose(table, header=header, str_align=["left", "right"], edge_line=True, number_align=True, table_format="rst", vertical_padding=0)
 print(s)
+s = table_verbose(table, header=header, str_align=["left", "right"], edge_line=True, number_align=True, table_format="html", vertical_padding=0)
+print(s)
