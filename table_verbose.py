@@ -56,13 +56,13 @@ def __jira_table_format(table, header, number_align, *args, **kwargs):
 # TableFormat's line elements that are based on column can be
 #
 #   - either None, if the element is not used,
-#   - or a Line tuple,
+#   - or a LineFormat tuple,
 #   - or a function: [col_widths], [col_alignments] -> string.
 #
 # TableFormat's header_row or data_row elements can be
 #
 #   - either None, if the element is not used,
-#   - or a DataRow tuple,
+#   - or a LineFormat tuple,
 #   - or a function: [cell_values], [col_widths], col_alignment OR [col_alignments] -> string.
 #
 # padding (an integer) is the amount of minimum white space around data values.
@@ -121,6 +121,22 @@ LineFormat = namedtuple(
 )
 
 TableFormatter = {
+    "plain": TableFormat(
+        head_note=None,
+        line_above=None,
+        line_below_header=None,
+        line_between_rows=None,
+        line_below=None,
+        header_row=LineFormat(" "," "," "," "),
+        data_row=LineFormat(" "," "," "," "),
+        end_note=None,
+        force_padding=0,
+        force_left=None,
+        force_bottom=None,
+        force_top=None,
+        force_right=None,
+        illegal={'\t'}
+    ),
     "ascii": TableFormat(
         head_note=None,
         line_above=LineFormat("-","-","-","-"),
@@ -153,6 +169,22 @@ TableFormatter = {
         force_right=None,
         illegal={"\t"}
     ),
+    "rst": TableFormat(
+        head_note=None,
+        line_above=LineFormat("", "=", "  ", ""),
+        line_below_header=LineFormat("", "=", "  ", ""),
+        line_between_rows=None,
+        line_below=LineFormat("", "=", "  ", ""),
+        header_row=LineFormat("", " ", "  ", ""),
+        data_row=LineFormat("", " ", "  ", ""),
+        end_note=None,
+        force_padding=1,
+        force_left=None,
+        force_bottom=None,
+        force_top=None,
+        force_right=None,
+        illegal={"\t"}
+    ),
     "jira": __jira_table_format,
     "markdown": TableFormat(
         head_note=None,
@@ -169,6 +201,38 @@ TableFormatter = {
         force_top=False,
         force_right=True,
         illegal={'\t', "\n"}
+    ),
+    "fancy_grid": TableFormat(
+        head_note=None,
+        line_above=LineFormat("╒", "═", "╤", "╕"),
+        line_below_header=LineFormat("╞", "═", "╪", "╡"),
+        line_between_rows=LineFormat("├", "─", "┼", "┤"),
+        line_below=LineFormat("╘", "═", "╧", "╛"),
+        header_row=LineFormat("│", " ", "│", "│"),
+        data_row=LineFormat("│", " ", "│", "│"),
+        end_note=None,
+        force_padding=0,
+        force_left=None,
+        force_bottom=True,
+        force_top=True,
+        force_right=None,
+        illegal={'\t'}
+    ),
+    "fancy_outline": TableFormat(
+        head_note=None,
+        line_above=LineFormat("╒", "═", "╤", "╕"),
+        line_below_header=LineFormat("╞", "═", "╪", "╡"),
+        line_between_rows=None,
+        line_below=LineFormat("╘", "═", "╧", "╛"),
+        header_row=LineFormat("│", " ", "│", "│"),
+        data_row=LineFormat("│", " ", "│", "│"),
+        end_note=None,
+        force_padding=0,
+        force_left=None,
+        force_bottom=True,
+        force_top=True,
+        force_right=None,
+        illegal={'\t'}
     ),
 }
 
