@@ -6,6 +6,7 @@
 
 from collections import namedtuple
 from typing import List, Union
+from pandas import DataFrame
 
 # Line generators
 def __markdown_below_header_generator(grid_space, align_list):
@@ -475,6 +476,11 @@ def table_verbose(table,
                   padding=0,
                   vertical_padding=0,
                   ):
+    if isinstance(table, DataFrame):
+        if header is None:
+            header = list(header.columns)
+        table = table.to_numpy()
+
     if table_format not in TableFormatter:
         raise ValueError("Choose one from {}".format(list(TableFormatter.keys())))
     formatter = TableFormatter[table_format]

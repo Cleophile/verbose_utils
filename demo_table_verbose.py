@@ -21,3 +21,15 @@ s = table_verbose(table, header=header, str_align=["left", "right"], edge_line=T
 print(s)
 s = table_verbose(table, header=header, str_align=["left", "right"], edge_line=True, number_align=True, table_format="html", vertical_padding=0)
 print(s)
+
+print("np.array test")
+import numpy as np
+import pandas as pd
+table = np.array(table)
+s = table_verbose(table, header=header, str_align=["left", "right"], edge_line=True, number_align=True, table_format="pretty_ascii", vertical_padding=0)
+print(s)
+
+dta = pd.DataFrame(dict(stock=['600123','600234','600345'], price=[11.34, 11.29, 13.37]))
+s = table_verbose(dta, header=['stockId\nsymbol','price'], str_align=["left", "right"], edge_line=True, number_align=True, table_format="pretty_ascii", vertical_padding=0)
+print(s)
+
