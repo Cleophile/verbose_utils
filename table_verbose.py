@@ -478,7 +478,7 @@ def table_verbose(table,
                   ):
     if isinstance(table, DataFrame):
         if header is None:
-            header = list(header.columns)
+            header = list(table.columns)
         table = table.to_numpy()
 
     if table_format not in TableFormatter:
